@@ -54,3 +54,5 @@ reports/
 project/project/
 project/target/
 *.bsp
+
+**/application.conf

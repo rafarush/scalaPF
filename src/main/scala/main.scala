@@ -1,10 +1,10 @@
-import cats.effect._
-import cats.effect.unsafe.implicits.global
-import cats.implicits._
+import cats.effect.{Deferred, ExitCode, IO, IOApp}
 import config.AppConfig
 import database.DatabaseConnection
 import services._
 import ui.MainWindow
+import cats.effect.unsafe.implicits.global
+import reports.PDFReportGenerator
 
 import javax.swing.SwingUtilities
 //import reports._
@@ -59,6 +59,17 @@ object Main extends IOApp {
       deferred <- Deferred[IO, Unit]
 
       exitCode <- DatabaseConnection.createTransactor[IO](config.database).use { xa =>
+        val pdfGen = new PDFReportGenerator[IO](xa)
+        val entityName = "1" // <-- pon aquí el nombre que quieras buscar
+        val outputPath = "reports"
+
+        for {
+          _ <- pdfGen.createRelatedEntityReportPDF(entityName, outputPath)
+        } yield ExitCode.Success
+      }
+
+
+      exitCode <- DatabaseConnection.createTransactor[IO](config.database).use { xa =>
         // Inicializar servicios con el transactor
         val services = ServiceLocator[IO](xa) // Suponiendo que ServiceLocator se construye así
 
@@ -75,6 +86,10 @@ object Main extends IOApp {
           })
         } *> deferred.get.as(ExitCode.Success) // Esperar cierre ventana y devolver éxito
       }
+
+
+
+
     } yield exitCode
   }
 

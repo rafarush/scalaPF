@@ -17,6 +17,100 @@ class PDFReportGenerator[F[_]: Sync](xa: Transactor[F]) {
 
   private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
+
+
+
+
+
+  def createRelatedEntityReportPDF(entityName: String, outputPath: String): F[Unit] = {
+    val query =
+      sql"""SELECT entityName, entityType, address, phone, contactEmail, directorName, centerCode
+            FROM RelatedEntity
+            WHERE entityName = $entityName"""
+        .query[(String, String, String, String, String, String, String)]
+        .option
+
+    query.transact(xa).flatMap {
+      case Some((name, entityType, address, phone, email, director, centerCode)) =>
+        Sync[F].delay {
+          import com.itextpdf.text._
+          import com.itextpdf.text.pdf._
+          import java.io.FileOutputStream
+
+          val pdfPath = java.nio.file.Paths.get(outputPath, "relatedEntityReporte.pdf").toString
+          val document = new Document()
+          PdfWriter.getInstance(document, new FileOutputStream(pdfPath))
+          document.open()
+
+          val titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18)
+          val labelFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.WHITE)
+          val valueFont = FontFactory.getFont(FontFactory.HELVETICA, 12, BaseColor.BLACK)
+
+          val title = new Paragraph("Ficha de Entidad Asociada", titleFont)
+          title.setAlignment(Element.ALIGN_CENTER)
+          document.add(title)
+          document.add(new Paragraph(" "))
+
+          val table = new PdfPTable(2)
+          table.setWidthPercentage(100)
+          table.setSpacingBefore(10f)
+          table.setSpacingAfter(10f)
+
+          def addRow(label: String, value: String): Unit = {
+            val labelCell = new PdfPCell(new Phrase(label, labelFont))
+            labelCell.setBackgroundColor(new BaseColor(0, 122, 204))
+            labelCell.setPadding(6)
+            labelCell.setHorizontalAlignment(Element.ALIGN_LEFT)
+            labelCell.setVerticalAlignment(Element.ALIGN_MIDDLE)
+
+            val valueCell = new PdfPCell(new Phrase(Option(value).getOrElse(""), valueFont))
+            valueCell.setPadding(6)
+            valueCell.setHorizontalAlignment(Element.ALIGN_LEFT)
+
+            table.addCell(labelCell)
+            table.addCell(valueCell)
+          }
+
+          addRow("Nombre", name)
+          addRow("Tipo", entityType)
+          addRow("Dirección", address)
+          addRow("Teléfono", phone)
+          addRow("Email", email)
+          addRow("Director", director)
+          addRow("Código del Centro", centerCode)
+
+          document.add(table)
+          document.close()
+          println(s"Reporte PDF generado correctamente en: $pdfPath")
+        }
+      case None =>
+        Sync[F].delay {
+          import com.itextpdf.text._
+          import com.itextpdf.text.pdf._
+          import java.io.FileOutputStream
+
+          val pdfPath = java.nio.file.Paths.get(outputPath, "relatedEntityReporte.pdf").toString
+          val document = new Document()
+          PdfWriter.getInstance(document, new FileOutputStream(pdfPath))
+          document.open()
+
+          val titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18)
+          val title = new Paragraph("Ficha de Entidad Asociada", titleFont)
+          title.setAlignment(Element.ALIGN_CENTER)
+          document.add(title)
+          document.add(new Paragraph("No se encontró ninguna entidad con el nombre: " + entityName))
+          document.close()
+          println(s"Reporte PDF generado correctamente en: $pdfPath")
+        }
+    }
+  }
+
+
+
+
+
+
+
   def createCenterReportPDF(outputPath: String): F[Unit] = {
     val centerService = CenterService[F](xa)
 
