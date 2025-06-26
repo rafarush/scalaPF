@@ -47,7 +47,7 @@ build/
 ### Scala ###
 .bsp/
 
-reports/
+/reports/
 
 
 # sbt

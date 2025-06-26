@@ -60,7 +60,7 @@ object Main extends IOApp {
 
       exitCode <- DatabaseConnection.createTransactor[IO](config.database).use { xa =>
         val pdfGen = new PDFReportGenerator[IO](xa)
-        val entityName = "1" // <-- pon aquí el nombre que quieras buscar
+        val entityName = "2" // <-- pon aquí el nombre que quieras buscar
         val outputPath = "reports"
 
         for {
