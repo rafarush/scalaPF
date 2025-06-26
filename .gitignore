@@ -55,4 +55,4 @@ project/project/
 project/target/
 *.bsp
 
-**/application.conf
+src/main/resources/application.conf
