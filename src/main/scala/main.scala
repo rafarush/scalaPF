@@ -4,7 +4,9 @@ import database.DatabaseConnection
 import services._
 import ui.MainWindow
 import cats.effect.unsafe.implicits.global
+import doobie._
 import reports.PDFReportGenerator
+import services.ServiceLocator
 
 import javax.swing.SwingUtilities
 //import reports._
@@ -58,9 +60,175 @@ object Main extends IOApp {
       // Crear Deferred para esperar cierre ventana
       deferred <- Deferred[IO, Unit]
 
+
+
+
+
+
+      exitCode <- DatabaseConnection.createTransactor[IO](config.database).use { xa =>
+      val relatedEntityService = new RelatedEntityService[IO](xa)
+
+      val testEntity = RelatedEntity(
+        entityName = "test5",
+        entityType = "Clinica", address = "Direc 1", phone = "111", contactEmail = "test@gmail.com", directorName = "Pepe", centerCode = "1"
+      )
+
+        for {
+          // Crear
+          _ <- IO(println("Creando Related..."))
+          resCreate <- relatedEntityService.create(testEntity).transact(xa)
+          _ <- IO(println(s"Resultado creación: $resCreate"))
+
+        } yield ExitCode.Success
+
+
+
+
+
+
+        val driverService = new DriverService[IO](xa)
+
+        val testdriver = Driver(
+          driverId = "04102468006", firstName = "pepe", lastName = "pepe", birthDate = LocalDate.of(2004,11,23), address = "direc1", phone = "111", email = "pepe@gmail.com"
+        )
+
+        for {
+          // Crear
+          _ <- IO(println("Creando Related..."))
+          resCreate <- driverService.create(testdriver).transact(xa)
+          _ <- IO(println(s"Resultado creación: $resCreate"))
+
+        } yield ExitCode.Success
+
+
+
+
+
+
+
+
+        val testService = new TestService[IO](xa)
+
+        val test1 = Test(
+          testCode = "1234561", testType = "Medico", date = LocalDate.of(2024,1,23), result = true, entityName = "test1", examinerName = "pepe", driverId = "04102468006", licenseType = "A")
+        val test2 = Test(
+          testCode = "12345722", testType = "Teorico", date = LocalDate.of(2024,1,25), result = true, entityName = "test1", examinerName = "pepe", driverId = "04102468006", licenseType = "A")
+        val test3 = Test(
+          testCode = "1234583", testType = "Practico", date = LocalDate.of(2024,1,29), result = true, entityName = "test1", examinerName = "pepe", driverId = "04102468006", licenseType = "A")
+
+        for {
+          // Crear
+          _ <- IO(println("Creando Related..."))
+          resCreate <- testService.create(test1).transact(xa)
+          _ <- IO(println(s"Resultado creación: $resCreate"))
+          resCreate <- testService.create(test2).transact(xa)
+          _ <- IO(println(s"Resultado creación: $resCreate"))
+          resCreate <- testService.create(test3).transact(xa)
+          _ <- IO(println(s"Resultado creación: $resCreate"))
+
+        } yield ExitCode.Success
+
+
+
+
+
+
+
+
+        val licenseService = new LicenseService[IO](xa)
+
+        val license = License(
+          licenseId = "12354757", driverId = "04102468006", licenseType = "A", issueDate = LocalDate.of(2024,1,29), expirationDate = LocalDate.of(2026,1,29), restrictions = "Vista", renewed = true, licenseStatus = "Vigente")
+
+        for {
+          // Crear
+          _ <- IO(println("Creando Related..."))
+          resCreate <- licenseService.create(license).transact(xa)
+          _ <- IO(println(s"Resultado creación: $resCreate"))
+
+        } yield ExitCode.Success
+
+
+
+
+
+
+
+
+
+
+
+
+        val infractionService = new InfractionService[IO](xa)
+
+        val infraction = Infraction(
+          infractionCode = "455265", licenseId = "7", violationType = "Leve", date = LocalDate.of(2024,2,20), location = "Matanzas", description = "Se dio duro", points = 6, isPaid = true
+        )
+
+        for {
+          // Crear
+          _ <- IO(println("Creando Related..."))
+          resCreate <- infractionService.create(infraction).transact(xa)
+          _ <- IO(println(s"Resultado creación: $resCreate"))
+
+        } yield ExitCode.Success
+
+
+
+
+
+
+
+
+
+
+
+        /*
+        
+        val infractionService = new InfractionService[IO](xa)
+
+        val testInfraction =Infraction(
+          infractionCode ="46576jnh",
+          licenseId="5",
+          violationType = "Leve",
+          date = LocalDate.of(2025,6,26),
+          location = "Calle 23 y 12",
+          description = "Choco contra el semasforo al fallarle los frenos",
+          points = 6,
+          isPaid = true
+        )
+        // infractionCode: String,
+        //                       licenseId: String,
+        //                       violationType: String,
+        //                       date: LocalDate,
+        //                       location: String,
+        //                       description: String,
+        //                       points: Int,
+        //                       isPaid: Boolean
+
+        for {
+          // Crear
+          _ <- IO(println("Creando Infraccion..."))
+          resCreate <- infractionService.create(testInfraction).transact(xa)
+          _ <- IO(println(s"Resultado creación: $resCreate"))
+
+        } yield ExitCode.Success
+
+
+
+         */
+      }
+
+
+
+
+
+
+
+
       exitCode <- DatabaseConnection.createTransactor[IO](config.database).use { xa =>
         val pdfGen = new PDFReportGenerator[IO](xa)
-        val entityName = "2" // <-- pon aquí el nombre que quieras buscar
+        val entityName = "test1" // <-- pon aquí el nombre que quieras buscar
         val outputPath = "reports"
 
         for {
